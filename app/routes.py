@@ -155,6 +155,20 @@ def stream_grades():
                                 "data": grades_data
                             }) + "\n"
 
+                            # Fetch Frequency
+                            freq_data = None
+                            try:
+                                freq_data = await course.get_frequency()
+                            except Exception as e:
+                                print(f"Error fetching frequency for {course.title}: {e}")
+
+                            if freq_data:
+                                yield json.dumps({
+                                    "type": "course_frequency",
+                                    "id": course_id,
+                                    "data": freq_data
+                                }) + "\n"
+
         except Exception as e:
             print(f"Stream error: {e}")
             yield json.dumps({"error": str(e)}) + "\n"

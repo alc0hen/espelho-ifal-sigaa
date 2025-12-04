@@ -29,7 +29,7 @@
 
     /* Navigation Tabs */
     .tabs {
-      display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px 20px;
+      display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:10px 20px;
       position:sticky; top:65px; z-index:9; background:var(--bg);
     }
     .tab-btn {
@@ -189,6 +189,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('list')">Minhas Notas</button>
     <button class="tab-btn" onclick="switchTab('stats')">Análise</button>
+    <button class="tab-btn" onclick="switchTab('frequency')">Frequência</button>
   </div>
 
   <div class="container">
@@ -209,6 +210,10 @@
       <h3 style="margin:16px 0 8px 0; font-size:14px; color:var(--muted); text-transform:uppercase;">Prioridade Alta</h3>
       <div id="priority-list"></div>
 
+    </div>
+
+    <div id="view-frequency" class="view-section">
+      <div id="frequency-container"></div>
     </div>
 
   </div>
@@ -286,10 +291,14 @@
 
     const buttons = document.querySelectorAll('.tab-btn');
     if(viewId === 'list') buttons[0].classList.add('active');
-    else buttons[1].classList.add('active');
+    else if(viewId === 'stats') buttons[1].classList.add('active');
+    else if(viewId === 'frequency') buttons[2].classList.add('active');
 
     if (viewId === 'stats') {
         renderChart();
+    }
+    if (viewId === 'frequency') {
+        renderFrequency();
     }
   }
 
@@ -457,6 +466,15 @@
             updateHeader();
         }
     }
+    else if (msg.type === 'course_frequency') {
+        const idx = data.findIndex(d => d.id === msg.id);
+        if (idx !== -1) {
+            data[idx] = { ...data[idx], frequency: msg.data };
+            if (document.getElementById('view-frequency').classList.contains('active')) {
+                renderFrequency();
+            }
+        }
+    }
   }
 
   function addOrUpdateCourse(courseObj) {
@@ -561,6 +579,67 @@
           container.appendChild(div);
       }
     });
+  }
+
+  // --- FREQUÊNCIA ---
+  function renderFrequency() {
+      const container = document.getElementById('frequency-container');
+      container.innerHTML = '';
+
+      const items = data.filter(d => !d.isLoading);
+
+      if (items.length === 0) {
+          container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted)">Carregando ou sem dados...</div>';
+          return;
+      }
+
+      items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'card';
+
+          let freqContent = '';
+          if (item.frequency) {
+              const { total_faltas, max_faltas, percent } = item.frequency;
+
+              // Assume Max is 25% of Total.
+              // Total Classes = max_faltas * 4
+              // If max_faltas is 0, we can't calc percentage properly unless we assume something, but we'll stick to data.
+
+              const pctDisplay = percent.toFixed(1) + '%';
+
+              // Status based on percentage. > 25% is failed.
+              // Or total_faltas > max_faltas
+              const isFailed = total_faltas > max_faltas;
+              const statusColor = isFailed ? 'var(--danger)' : 'var(--success)';
+              const statusText = isFailed ? 'Reprovado por Faltas' : 'Dentro do Limite';
+
+              freqContent = `
+                  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
+                      <div>
+                          <div style="font-size:12px; color:var(--muted)">Faltas / Limite</div>
+                          <div style="font-size:16px; font-weight:600; color:#fff">${total_faltas} / ${max_faltas}</div>
+                      </div>
+                      <div style="text-align:right">
+                          <div style="font-size:12px; color:var(--muted)">Ausência</div>
+                          <div style="font-size:24px; font-weight:800; color:${statusColor}">${pctDisplay}</div>
+                      </div>
+                  </div>
+                  <div style="margin-top:4px; font-size:10px; color:${statusColor}; text-align:right; font-weight:700; text-transform:uppercase;">
+                      ${statusText}
+                  </div>
+              `;
+          } else {
+              freqContent = `<div style="margin-top:8px; font-size:12px; color:var(--muted)">Carregando frequência...</div>`;
+          }
+
+          div.innerHTML = `
+              <div class="row-top">
+                  <div class="subj-name">${item.name}</div>
+              </div>
+              ${freqContent}
+          `;
+          container.appendChild(div);
+      });
   }
 
   // --- GRÁFICOS E ANÁLISE ---

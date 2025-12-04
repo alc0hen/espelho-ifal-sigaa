@@ -23,6 +23,12 @@ class Course:
         self.grades = self._parse_grades(grades_page)
         return self.grades
 
+    async def get_frequency(self):
+        course_page = await self._enter_course()
+        freq_page = await self._navigate_to_frequency(course_page)
+        self.frequency = self._parse_frequency(freq_page)
+        return self.frequency
+
     async def _enter_course(self):
         page = await self.session.post(
             self.form_data['action'],
@@ -49,6 +55,68 @@ class Course:
                     break
 
         raise ValueError("Could not find 'Ver Notas' menu item.")
+
+    async def _navigate_to_frequency(self, course_page):
+        # Look for "Frequência" link, handling encoding if necessary
+        # Usually checking for "Frequência" or "Frequencia" covers it
+        menu_items = course_page.soup.find_all(lambda text: text and "Frequência" in text)
+
+        if not menu_items:
+             menu_items = course_page.soup.find_all(lambda text: text and "Frequencia" in text)
+
+        for item in menu_items:
+            parent = item.parent
+            while parent:
+                if parent.name in ['td', 'div', 'a']:
+                    if parent.get('onclick'):
+                        js_code = parent['onclick']
+                        form_data = course_page.parse_jsfcljs(js_code)
+                        page = await self.session.post(
+                            form_data['action'],
+                            data=form_data['post_values']
+                        )
+                        return page
+                parent = parent.parent
+                if not parent or parent.name == 'body':
+                    break
+
+        raise ValueError("Could not find 'Frequência' menu item.")
+
+    def _parse_frequency(self, page):
+        # Parse the "Mapa de Frequências" page
+        data = {
+            'total_faltas': 0,
+            'max_faltas': 0,
+            'percent': 0.0
+        }
+
+        # The footer usually contains:
+        # "Total de Faltas: 0"
+        # "Máximo de Faltas Permitido: 10"
+
+        # We can look for the text directly
+        import re
+
+        text_content = page.soup.get_text()
+
+        total_match = re.search(r'Total de Faltas:\s*(\d+)', text_content)
+        if total_match:
+            data['total_faltas'] = int(total_match.group(1))
+
+        max_match = re.search(r'Máximo de Faltas Permitido:\s*(\d+)', text_content)
+        if max_match:
+            data['max_faltas'] = int(max_match.group(1))
+
+        # Calculate percentage based on 25% rule
+        # If Max = 25%, then Total Classes = Max * 4
+        # Percentage = (Total Faltas / Total Classes) * 100
+        if data['max_faltas'] > 0:
+            total_classes = data['max_faltas'] * 4
+            data['percent'] = (data['total_faltas'] / total_classes) * 100
+        else:
+            data['percent'] = 0.0
+
+        return data
 
     def _parse_grades(self, page):
         grades = []
