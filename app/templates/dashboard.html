@@ -593,6 +593,30 @@
           return;
       }
 
+      // -- Calculate and Display Overall Average --
+      const itemsWithFreq = items.filter(d => d.frequency);
+      let overallAvg = 0;
+      if (itemsWithFreq.length > 0) {
+          const totalPct = itemsWithFreq.reduce((sum, d) => sum + d.frequency.percent, 0);
+          overallAvg = totalPct / itemsWithFreq.length;
+      }
+
+      const overallColor = overallAvg > 25 ? 'var(--danger)' : 'var(--accent)';
+
+      const summaryCard = document.createElement('div');
+      summaryCard.className = 'card';
+      summaryCard.innerHTML = `
+         <div class="row-top">
+           <div class="subj-name">Média Geral de Faltas</div>
+         </div>
+         <div style="text-align:center; padding:10px 0;">
+            <div style="font-size:32px; font-weight:800; color:${overallColor}">${overallAvg.toFixed(1)}%</div>
+            <div style="font-size:12px; color:var(--muted); text-transform:uppercase;">Ausência Média</div>
+         </div>
+      `;
+      container.appendChild(summaryCard);
+      // ------------------------------------------
+
       items.forEach(item => {
           const div = document.createElement('div');
           div.className = 'card';
@@ -611,7 +635,7 @@
               // Or total_faltas > max_faltas
               const isFailed = total_faltas > max_faltas;
               const statusColor = isFailed ? 'var(--danger)' : 'var(--success)';
-              const statusText = isFailed ? 'Reprovado por Faltas' : 'Dentro do Limite';
+              const statusText = isFailed ? 'Limite indicado ultrapassado' : 'Dentro do Limite';
 
               freqContent = `
                   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
