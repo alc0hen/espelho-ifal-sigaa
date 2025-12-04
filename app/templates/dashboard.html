@@ -618,9 +618,15 @@
       // -- Calculate and Display Overall Average --
       const itemsWithFreq = items.filter(d => d.frequency);
       let overallAvg = 0;
+      let sumTotalFaltas = 0;
+      let sumMaxFaltas = 0;
+
       if (itemsWithFreq.length > 0) {
           const totalPct = itemsWithFreq.reduce((sum, d) => sum + d.frequency.percent, 0);
           overallAvg = totalPct / itemsWithFreq.length;
+
+          sumTotalFaltas = itemsWithFreq.reduce((sum, d) => sum + d.frequency.total_faltas, 0);
+          sumMaxFaltas = itemsWithFreq.reduce((sum, d) => sum + d.frequency.max_faltas, 0);
       }
 
       const overallColor = overallAvg > 25 ? 'var(--danger)' : 'var(--accent)';
@@ -630,10 +636,17 @@
       summaryCard.innerHTML = `
          <div class="row-top">
            <div class="subj-name">Média Geral de Faltas</div>
+           <div onclick="alert('Essa porcentagem é referente ao máximo de faltas totais do ano.')" style="cursor:pointer; color:var(--muted);">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+               <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+               <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+             </svg>
+           </div>
          </div>
          <div style="text-align:center; padding:10px 0;">
             <div style="font-size:32px; font-weight:800; color:${overallColor}">${overallAvg.toFixed(1)}%</div>
-            <div style="font-size:12px; color:var(--muted); text-transform:uppercase;">Ausência Média</div>
+            <div style="font-size:16px; font-weight:600; color:#fff; margin-top: 4px;">${sumTotalFaltas}/${sumMaxFaltas}</div>
+
          </div>
       `;
       container.appendChild(summaryCard);
