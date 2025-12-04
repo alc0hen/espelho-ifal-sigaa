@@ -35,12 +35,12 @@ async def login():
 
     return render_template('login.html')
 
+@bp.route('/apoio')
+def support():
+    return render_template('support.html')
+
 def process_grades(raw_grades):
-    """
-    Transforms hierarchical SIGAA grades into the flat structure required by the frontend.
-    Handles partial grades (-) as 0.0.
-    Handles column shift by picking the last numeric value in a group as the average.
-    """
+
     data = {
         'b1Notes': [], 'b2Notes': [], 'b3Notes': [], 'b4Notes': [],
         'r1Note': None, 'r2Note': None

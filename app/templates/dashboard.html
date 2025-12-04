@@ -15,7 +15,7 @@
       --radius:16px;
     }
     *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-    body{margin:0;font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); padding-bottom:80px; -webkit-font-smoothing:antialiased;}
+    body{margin:0;font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); padding-bottom:120px; -webkit-font-smoothing:antialiased;}
 
     /* Header Fixo Mobile */
     .app-header {
@@ -74,14 +74,48 @@
     .bd-danger {background:rgba(239, 68, 68, 0.15); color:var(--danger);}
     .bd-info {background:rgba(56, 189, 248, 0.15); color:var(--accent);}
 
+    /* Support Card */
+    .support-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      animation: slideInUp 0.5s ease, pulse 3s ease-in-out infinite;
+    }
+    .support-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: rotate 10s linear infinite;
+    }
+    .support-card .card-indicator { background: rgba(255,255,255,0.3) !important; }
+    .support-card .subj-name { color: #fff; font-size: 14px; }
+    .support-card .subj-obs { color: rgba(255,255,255,0.8); }
+    .support-card .score-val { color: #ffd700; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     /* Views */
     .view-section {display:none; animation: fadeIn 0.3s ease;}
     .view-section.active {display:block;}
-
-    /* Fab Button (Removido na versão ReadOnly) */
-    .fab {
-      display: none;
-    }
 
     /* Modal */
     #modal {
@@ -109,6 +143,31 @@
     .note-input-row .btn-remove { display:none; }
     .recovery-input-group { display:flex; gap:10px; margin-bottom:12px; }
     .recovery-input-group > div { flex: 1; }
+
+    /* Footer */
+    .app-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(9,9,11,0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      z-index: 8;
+    }
+    .app-footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .app-footer a:hover {
+      color: #60d5fc;
+    }
 
     @keyframes fadeIn { from{opacity:0} to{opacity:1}}
     @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)}}
@@ -153,6 +212,10 @@
     </div>
 
   </div>
+
+  <footer class="app-footer">
+    Desenvolvido por <a href="https://www.instagram.com/al.c0hen/" target="_blank" rel="noopener">al.cohen</a>
+  </footer>
 
   <div id="modal">
     <div class="modal-content">
@@ -212,6 +275,7 @@
   let isStreamActive = false;
   const ANNUAL_PASS_SCORE = 24;
   const SEMESTER_PASS_SCORE = 12;
+  let supportCardShown = false;
 
   // --- NAVEGAÇÃO DE ABAS ---
   window.switchTab = function(viewId) {
@@ -228,6 +292,39 @@
         renderChart();
     }
   }
+
+  // --- CARD DE APOIO ---
+  function showSupportCard() {
+    if (supportCardShown) return;
+    supportCardShown = true;
+
+    const container = document.getElementById('cards-container');
+    const supportDiv = document.createElement('div');
+    supportDiv.className = 'card support-card';
+    supportDiv.onclick = () => window.location.href = "{{ url_for('main.support') }}";
+
+    supportDiv.innerHTML = `
+      <div class="card-indicator" style="background:rgba(255,255,255,0.3)"></div>
+      <div class="row-top">
+        <div>
+          <div class="subj-name">✨ Apoie o Projeto</div>
+          <span class="subj-obs">Tenha acesso a funções antecipadas!</span>
+        </div>
+        <div class="score-box">
+          <div class="score-val">💝</div>
+          <span class="score-label">Premium</span>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(supportDiv);
+  }
+
+  // Mostrar card de apoio após 5 segundos
+  setTimeout(() => {
+    if (!isStreamActive) return;
+    showSupportCard();
+  }, 5000);
 
   // --- LÓGICA DE CÁLCULO ---
 
@@ -285,8 +382,6 @@
       else s2_status = 'Parcial';
     }
 
-    // REGRA DE APROVAÇÃO GLOBAL (META 24)
-    // Se o total for >= 24, considera aprovado independente do resto
     const final_ok = (s1_status === 'Concluído' && s2_status === 'Concluído') || (total_score >= ANNUAL_PASS_SCORE);
 
     const isCritical = !final_ok && (s1_status === 'Reprovado' || s2_status === 'Reprovado');
@@ -312,7 +407,7 @@
             buffer += decoder.decode(value, { stream: true });
 
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep partial line for next chunk
+            buffer = lines.pop();
 
             for (const line of lines) {
                 if (!line.trim()) continue;
@@ -341,10 +436,8 @@
 
     if (msg.type === 'user_info') {
         // Optional: Update user name or header
-        // document.querySelector('.app-title').textContent += " - " + msg.name;
     }
     else if (msg.type === 'course_start') {
-        // Add placeholder card
         addOrUpdateCourse({
             id: msg.id,
             name: msg.name,
@@ -357,12 +450,11 @@
         document.getElementById('totalResume').textContent = "Carregando notas...";
     }
     else if (msg.type === 'course_data') {
-        // Update existing card with data
         const idx = data.findIndex(d => d.id === msg.id);
         if (idx !== -1) {
             data[idx] = { ...data[idx], ...msg.data, isLoading: false };
-            renderList(); // Re-render to show grades
-            updateHeader(); // Update stats
+            renderList();
+            updateHeader();
         }
     }
   }
@@ -397,7 +489,10 @@
 
   function renderList(){
     const container = document.getElementById('cards-container');
-    container.innerHTML = '';
+
+    // Remove apenas os cards de disciplinas, mantém o card de apoio
+    const existingCards = container.querySelectorAll('.card:not(.support-card)');
+    existingCards.forEach(card => card.remove());
 
     const sorted = [...data].sort((a,b) => {
         if (a.isLoading && !b.isLoading) return 1;
@@ -411,6 +506,9 @@
         return sb.falta - sa.falta;
     });
 
+    // Insere os cards antes do card de apoio (se existir)
+    const supportCard = container.querySelector('.support-card');
+
     sorted.forEach(item => {
       const div = document.createElement('div');
       div.className = 'card';
@@ -423,7 +521,11 @@
             </div>
             <div class="subj-obs">${item.obs}</div>
           `;
-          container.appendChild(div);
+          if (supportCard) {
+              container.insertBefore(div, supportCard);
+          } else {
+              container.appendChild(div);
+          }
           return;
       }
 
@@ -452,7 +554,12 @@
         </div>
         ${item.obs ? `<span class="subj-obs">${item.obs}</span>` : ''}
       `;
-      container.appendChild(div);
+
+      if (supportCard) {
+          container.insertBefore(div, supportCard);
+      } else {
+          container.appendChild(div);
+      }
     });
   }
 
@@ -538,7 +645,7 @@
       input.step = '0.1';
       input.inputMode = 'decimal';
       input.placeholder = `0.0`;
-      input.disabled = true; // Read Only
+      input.disabled = true;
       if (value !== null) input.value = value;
 
       noteRow.appendChild(input);
@@ -552,7 +659,7 @@
 
     if(id){
         const item = data.find(d => d.id === id);
-        if(!item || item.isLoading) return; // Prevent opening loading items
+        if(!item || item.isLoading) return;
 
         document.getElementById('m-title').textContent = 'Detalhes';
         document.getElementById('inpName').value = item.name;

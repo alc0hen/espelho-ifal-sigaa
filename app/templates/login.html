@@ -6,22 +6,19 @@
     <title>Login SIGAA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
-        /* Estilos customizados para refinar o tema escuro */
         body {
-            /* Fundo ligeiramente mais escuro que o padrão do dark mode do Bootstrap */
             background-color: #121212 !important;
             min-height: 100vh;
             display: flex;
-            align-items: center; /* Centraliza verticalmente */
+            align-items: center;
             padding-top: 1rem;
-            padding-bottom: 1rem;
+            padding-bottom: 70px;
         }
 
         .card {
-            /* Fundo do card ligeiramente mais claro que o body, para contraste */
             background-color: #1e1e1e;
             border: 1px solid #333;
-            border-radius: 10px; /* Borda mais arredondada */
+            border-radius: 10px;
         }
 
         .card-title {
@@ -40,20 +37,44 @@
 
         .form-control:focus {
             background-color: #333;
-            border-color: #0d6efd; /* Cor primária do Bootstrap no focus */
+            border-color: #0d6efd;
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
         }
 
         .btn-primary {
-            /* Ajuste sutil na cor do botão para o tema escuro */
             background-color: #0d6efd;
             border-color: #0d6efd;
         }
 
-        /* Melhoria na responsividade para telas menores */
+        .app-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #333;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            z-index: 1000;
+        }
+
+        .app-footer a {
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .app-footer a:hover {
+            color: #3d8bfd;
+        }
+
         @media (max-width: 576px) {
             .col-md-6.col-lg-4 {
-                max-width: 90%; /* Ocupa mais espaço em telas muito pequenas */
+                max-width: 90%;
             }
         }
     </style>
@@ -84,15 +105,17 @@
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100 py-2 fs-5">Entrar</button>
-                            <hr>
-                            <p class="text-center text-muted mt-3 mb-0">
-                            </p>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <footer class="app-footer">
+        Desenvolvido por <a href="https://www.instagram.com/al.c0hen/" target="_blank" rel="noopener">al.cohen</a>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
