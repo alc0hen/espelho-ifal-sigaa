@@ -1,3 +1,14 @@
-from .sigaa import Sigaa
+from flask import Flask
+import os
 
-__all__ = ['Sigaa']
+
+def create_app():
+    app = Flask(__name__)
+
+    # Use variável de ambiente em produção
+    app.secret_key = os.environ.get('SECRET_KEY', 'some_secret_key_for_session')
+
+    from . import routes
+    app.register_blueprint(routes.bp)
+
+    return app
