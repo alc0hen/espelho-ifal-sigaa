@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Boletim App 2025</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#09090b; --surface:#18181b; --surface-highlight:#27272a;
+      --border:rgba(255,255,255,0.08); --text:#e4e4e7; --muted:#a1a1aa;
+      --accent:#38bdf8; --success:#4ade80; --warning:#facc15; --danger:#ef4444;
+      --radius:16px;
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+    body{margin:0;font-family:'Inter', sans-serif; background:var(--bg); color:var(--text); padding-bottom:80px; -webkit-font-smoothing:antialiased;}
+
+    /* Header Fixo Mobile */
+    .app-header {
+      position: sticky; top:0; z-index:10;
+      background: rgba(9,9,11,0.95); backdrop-filter:blur(10px);
+      padding: 16px 20px; border-bottom:1px solid var(--border);
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .app-title {font-weight:700; font-size:18px; margin:0;}
+    .app-subtitle {font-size:12px; color:var(--muted); margin:0;}
+
+    /* Navigation Tabs */
+    .tabs {
+      display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px 20px;
+      position:sticky; top:65px; z-index:9; background:var(--bg);
+    }
+    .tab-btn {
+      background:var(--surface); border:1px solid var(--border); color:var(--muted);
+      padding:10px; border-radius:10px; font-weight:600; font-size:14px; text-align:center;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background:var(--accent); color:#000; border-color:var(--accent);
+    }
+
+    /* Container */
+    .container {padding:10px 20px; max-width:600px; margin:0 auto;}
+
+    /* CARD DESIGN */
+    .card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius); padding:16px; margin-bottom:12px;
+      display:flex; flex-direction:column; gap:8px;
+      transition: transform 0.1s; position: relative; overflow: hidden;
+      animation: fadeIn 0.3s ease;
+    }
+    .card:active { transform: scale(0.98); background:var(--surface-highlight); }
+    .card.skeleton { opacity: 0.5; pointer-events: none; }
+
+    .card-indicator { position: absolute; left:0; top:0; bottom:0; width:4px; }
+
+    .row-top {display:flex; justify-content:space-between; align-items:flex-start;}
+    .subj-name {font-weight:700; font-size:16px; color:#fff;}
+    .subj-obs {font-size:12px; color:var(--muted); font-style:italic; margin-top:2px; display:block;}
+
+    .score-box { text-align:right; }
+    .score-val {font-weight:800; font-size:18px;}
+    .score-label {font-size:10px; text-transform:uppercase; color:var(--muted); display:block;}
+
+    .badges-row {display:flex; gap:8px; margin-top:4px;}
+    .badge {
+      font-size:10px; font-weight:700; padding:4px 8px; border-radius:6px; text-transform:uppercase; white-space:nowrap;
+    }
+    .bd-ok {background:rgba(74, 222, 128, 0.15); color:var(--success);}
+    .bd-warn {background:rgba(250, 204, 21, 0.15); color:var(--warning);}
+    .bd-danger {background:rgba(239, 68, 68, 0.15); color:var(--danger);}
+    .bd-info {background:rgba(56, 189, 248, 0.15); color:var(--accent);}
+
+    /* Views */
+    .view-section {display:none; animation: fadeIn 0.3s ease;}
+    .view-section.active {display:block;}
+
+    /* Fab Button (Removido na versão ReadOnly) */
+    .fab {
+      display: none;
+    }
+
+    /* Modal */
+    #modal {
+      position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(5px);
+      z-index:200; display:none; align-items:flex-end;
+    }
+    .modal-content {
+      background:var(--surface); width:100%; border-radius:24px 24px 0 0;
+      padding:24px; border-top:1px solid var(--border);
+      animation: slideUp 0.3s ease; max-height: 90vh; overflow-y: auto;
+    }
+    input[type="text"], input[type="number"], select {
+      width:100%; padding:12px; background:#000; border:1px solid var(--border);
+      color:white; border-radius:12px; margin-bottom:12px; font-size:16px;
+    }
+    input:disabled { opacity: 0.7; color: var(--muted); }
+    label {font-size:12px; color:var(--muted); margin-bottom:4px; display:block;}
+
+    .btn-save, .btn-add-note, #btnDelete { display:none !important; }
+    .btn-close {position:absolute; top:20px; right:20px; background:transparent; border:none; color:white; font-size:20px;}
+
+    /* Estilos para Blocos de Notas (Novos) */
+    .note-input-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+    .note-input-row input { flex-grow:1; margin:0; padding:8px; }
+    .note-input-row .btn-remove { display:none; }
+    .recovery-input-group { display:flex; gap:10px; margin-bottom:12px; }
+    .recovery-input-group > div { flex: 1; }
+
+    @keyframes fadeIn { from{opacity:0} to{opacity:1}}
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)}}
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div>
+      <h1 class="app-title">Boletim 2025</h1>
+      <p class="app-subtitle" id="totalResume">Conectando ao SIGAA...</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <a href="{{ url_for('main.logout') }}" style="color:var(--muted); text-decoration:none; font-size:12px; font-weight:600;">Sair</a>
+        <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8);"></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('list')">Minhas Notas</button>
+    <button class="tab-btn" onclick="switchTab('stats')">Análise</button>
+  </div>
+
+  <div class="container">
+
+    <div id="view-list" class="view-section active">
+      <div id="cards-container"></div>
+      <div id="empty-list-msg" style="text-align:center; padding:20px; font-size:12px; color:var(--muted); opacity:0.5; display:none;">
+        Buscando disciplinas...
+      </div>
+    </div>
+
+    <div id="view-stats" class="view-section">
+      <div class="card">
+        <h3 style="margin:0 0 10px 0; font-size:16px;">Pontos Faltando (Meta 24)</h3>
+        <div style="height:250px"><canvas id="chartCanvas"></canvas></div>
+      </div>
+
+      <h3 style="margin:16px 0 8px 0; font-size:14px; color:var(--muted); text-transform:uppercase;">Prioridade Alta</h3>
+      <div id="priority-list"></div>
+
+    </div>
+
+  </div>
+
+  <div id="modal">
+    <div class="modal-content">
+      <button class="btn-close" onclick="closeModal()">✕</button>
+      <h2 id="m-title" style="margin:0 0 20px 0; font-size:20px;">Detalhes</h2>
+
+      <label>Nome da Disciplina</label>
+      <input type="text" id="inpName" disabled>
+
+      <p style="font-size:12px; color:var(--muted); margin:0 0 15px 0; line-height: 1.4;">
+        *Meta Fixa: 24pts*. (S1 passa com 12, S2 passa com 12).
+      </p>
+
+      <div class="recovery-input-group">
+          <div>
+              <label>R1 (Recup. S1)</label>
+              <input type="number" id="inpR1" step="0.1" inputmode="decimal" placeholder="Nota R1" disabled>
+          </div>
+          <div>
+              <label>R2 (Recup. S2)</label>
+              <input type="number" id="inpR2" step="0.1" inputmode="decimal" placeholder="Nota R2" disabled>
+          </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div>
+          <label>Notas B1</label>
+          <div id="notes-container-B1"></div>
+        </div>
+        <div>
+          <label>Notas B2</label>
+          <div id="notes-container-B2"></div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div>
+          <label>Notas B3</label>
+          <div id="notes-container-B3"></div>
+        </div>
+        <div>
+          <label>Notas B4</label>
+          <div id="notes-container-B4"></div>
+        </div>
+      </div>
+
+      <label>Observação</label>
+      <input type="text" id="inpObs" disabled>
+
+    </div>
+  </div>
+
+<script>
+  // --- CONFIG E DADOS ---
+  let data = [];
+  let chart = null;
+  let isStreamActive = false;
+  const ANNUAL_PASS_SCORE = 24;
+  const SEMESTER_PASS_SCORE = 12;
+
+  // --- NAVEGAÇÃO DE ABAS ---
+  window.switchTab = function(viewId) {
+    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+    document.getElementById('view-' + viewId).classList.add('active');
+
+    const buttons = document.querySelectorAll('.tab-btn');
+    if(viewId === 'list') buttons[0].classList.add('active');
+    else buttons[1].classList.add('active');
+
+    if (viewId === 'stats') {
+        renderChart();
+    }
+  }
+
+  // --- LÓGICA DE CÁLCULO ---
+
+  function calculateBimesterAverage(notesArray) {
+    const validNotes = notesArray.filter(n => !isNaN(n) && n !== null);
+    if (validNotes.length === 0) return { total: 0, count: 0, average: 0, hasNotes: false };
+    const sum = validNotes.reduce((a, b) => a + b, 0);
+    return { total: sum, count: validNotes.length, average: sum / validNotes.length, hasNotes: true };
+  }
+
+  function applyRecovery(b1_avg, b2_avg, rNote) {
+      if (rNote === null || rNote === undefined || isNaN(rNote)) {
+          return { total: b1_avg + b2_avg, usedRecovery: false };
+      }
+
+      const currentTotal = b1_avg + b2_avg;
+      const minScore = Math.min(b1_avg, b2_avg);
+
+      if (rNote > minScore) {
+          return { total: currentTotal - minScore + rNote, usedRecovery: true };
+      }
+
+      return { total: currentTotal, usedRecovery: false };
+  }
+
+  function calculateSubjectStatus(item) {
+    const b1 = calculateBimesterAverage(item.b1Notes);
+    const b2 = calculateBimesterAverage(item.b2Notes);
+    const b3 = calculateBimesterAverage(item.b3Notes);
+    const b4 = calculateBimesterAverage(item.b4Notes);
+
+    const s1_logic = applyRecovery(b1.average, b2.average, item.r1Note);
+    const s1_total = parseFloat(s1_logic.total.toFixed(2));
+
+    const s2_logic = applyRecovery(b3.average, b4.average, item.r2Note);
+    const s2_total = parseFloat(s2_logic.total.toFixed(2));
+
+    const total_score = parseFloat((s1_total + s2_total).toFixed(2));
+
+    let s1_status = 'S/N';
+    const hasS1Activity = b1.hasNotes || b2.hasNotes || (item.r1Note != null);
+
+    if (hasS1Activity) {
+      if (s1_total >= SEMESTER_PASS_SCORE) s1_status = 'Concluído';
+      else if (b1.hasNotes && b2.hasNotes) s1_status = 'Reprovado';
+      else s1_status = 'Parcial';
+    }
+
+    let s2_status = 'S/N';
+    const hasS2Activity = b3.hasNotes || b4.hasNotes || (item.r2Note != null);
+
+    if (hasS2Activity) {
+      if (s2_total >= SEMESTER_PASS_SCORE) s2_status = 'Concluído';
+      else if (b3.hasNotes && b4.hasNotes) s2_status = 'Reprovado';
+      else s2_status = 'Parcial';
+    }
+
+    // REGRA DE APROVAÇÃO GLOBAL (META 24)
+    // Se o total for >= 24, considera aprovado independente do resto
+    const final_ok = (s1_status === 'Concluído' && s2_status === 'Concluído') || (total_score >= ANNUAL_PASS_SCORE);
+
+    const isCritical = !final_ok && (s1_status === 'Reprovado' || s2_status === 'Reprovado');
+
+    return {
+      s1_status, s2_status, s1_total, s2_total, total_score, isCritical, final_ok,
+      falta: final_ok ? 0 : Math.max(0, ANNUAL_PASS_SCORE - total_score)
+    };
+  }
+
+  // --- STREAMING LOGIC ---
+  async function startDataStream() {
+    isStreamActive = true;
+    try {
+        const response = await fetch('/api/stream_grades');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep partial line for next chunk
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const msg = JSON.parse(line);
+                    handleStreamMessage(msg);
+                } catch (e) {
+                    console.error("JSON parse error:", e);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Stream failed:", e);
+        document.getElementById('totalResume').textContent = "Erro na conexão.";
+    } finally {
+        isStreamActive = false;
+        document.getElementById('totalResume').textContent = document.getElementById('totalResume').textContent === "Carregando..." ? "Concluído." : document.getElementById('totalResume').textContent;
+    }
+  }
+
+  function handleStreamMessage(msg) {
+    if (msg.error) {
+        if(msg.error === "Session expired") window.location.href = "/login";
+        return;
+    }
+
+    if (msg.type === 'user_info') {
+        // Optional: Update user name or header
+        // document.querySelector('.app-title').textContent += " - " + msg.name;
+    }
+    else if (msg.type === 'course_start') {
+        // Add placeholder card
+        addOrUpdateCourse({
+            id: msg.id,
+            name: msg.name,
+            obs: msg.obs,
+            b1Notes: [], b2Notes: [], b3Notes: [], b4Notes: [],
+            r1Note: null, r2Note: null,
+            isLoading: true
+        });
+        document.getElementById('empty-list-msg').style.display = 'none';
+        document.getElementById('totalResume').textContent = "Carregando notas...";
+    }
+    else if (msg.type === 'course_data') {
+        // Update existing card with data
+        const idx = data.findIndex(d => d.id === msg.id);
+        if (idx !== -1) {
+            data[idx] = { ...data[idx], ...msg.data, isLoading: false };
+            renderList(); // Re-render to show grades
+            updateHeader(); // Update stats
+        }
+    }
+  }
+
+  function addOrUpdateCourse(courseObj) {
+      const idx = data.findIndex(d => d.id === courseObj.id);
+      if (idx !== -1) {
+          data[idx] = courseObj;
+      } else {
+          data.push(courseObj);
+      }
+      renderList();
+  }
+
+  // --- RENDERIZAÇÃO DA UI ---
+  function getStatusColor(status){
+    if(status === 'Concluído') return 'bd-ok';
+    if(status === 'S/N') return 'bd-info';
+    if(status === 'Parcial') return 'bd-warn';
+    return 'bd-danger';
+  }
+
+  function updateHeader(){
+    const stats = data.filter(d => !d.isLoading).map(calculateSubjectStatus);
+    const pending = stats.filter(s => !s.final_ok && s.falta > 0).length;
+    const critical = stats.filter(s => s.isCritical).length;
+    const passed = stats.filter(s => s.final_ok).length;
+
+    document.getElementById('totalResume').innerHTML =
+      `${passed} concluídas • ${pending} pendentes • <span style="color:var(--danger)">${critical} críticas</span>`;
+  }
+
+  function renderList(){
+    const container = document.getElementById('cards-container');
+    container.innerHTML = '';
+
+    const sorted = [...data].sort((a,b) => {
+        if (a.isLoading && !b.isLoading) return 1;
+        if (!a.isLoading && b.isLoading) return -1;
+
+        const sa = calculateSubjectStatus(a);
+        const sb = calculateSubjectStatus(b);
+
+        if(sa.isCritical && !sb.isCritical) return -1;
+        if(sb.isCritical && !sa.isCritical) return 1;
+        return sb.falta - sa.falta;
+    });
+
+    sorted.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'card';
+
+      if (item.isLoading) {
+          div.className += ' skeleton';
+          div.innerHTML = `
+            <div class="row-top">
+              <div class="subj-name">${item.name} <span style="font-weight:400; font-size:12px; color:var(--muted)">...</span></div>
+            </div>
+            <div class="subj-obs">${item.obs}</div>
+          `;
+          container.appendChild(div);
+          return;
+      }
+
+      const st = calculateSubjectStatus(item);
+      const sideColor = st.isCritical ? 'var(--danger)' : (st.final_ok ? 'var(--success)' : 'var(--accent)');
+      const scoreColor = st.final_ok ? 'var(--success)' : (st.isCritical ? 'var(--danger)' : '#fff');
+      const scoreLabel = st.final_ok ? 'OK' : 'Falta';
+      const scoreDisplay = st.final_ok ? '✓' : st.falta.toFixed(1);
+
+      div.onclick = () => openModal(item.id);
+
+      div.innerHTML = `
+        <div class="card-indicator" style="background:${sideColor}"></div>
+        <div class="row-top">
+          <div>
+            <div class="subj-name">${item.name}</div>
+            <div class="badges-row">
+              <span class="badge ${getStatusColor(st.s1_status)}">S1: ${st.s1_status === 'Concluído' ? 'OK' : st.s1_total + '/12'}</span>
+              <span class="badge ${getStatusColor(st.s2_status)}">S2: ${st.s2_status === 'Concluído' ? 'OK' : st.s2_total + '/12'}</span>
+            </div>
+          </div>
+          <div class="score-box">
+             <div class="score-val" style="color:${scoreColor}">${scoreDisplay}</div>
+             <span class="score-label">${scoreLabel}</span>
+          </div>
+        </div>
+        ${item.obs ? `<span class="subj-obs">${item.obs}</span>` : ''}
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // --- GRÁFICOS E ANÁLISE ---
+  function renderPriority(){
+    const list = document.getElementById('priority-list');
+    list.innerHTML = '';
+
+    const priorityItems = data
+        .filter(d => !d.isLoading)
+        .map(item => ({...item, status: calculateSubjectStatus(item)}))
+        .filter(d => d.status.isCritical || d.status.falta > 0)
+        .sort((a,b) => b.status.falta - a.status.falta);
+
+    if(priorityItems.length === 0) {
+        list.innerHTML = '<div style="color:var(--muted); font-size:12px">Parabéns! Tudo concluído.</div>';
+    } else {
+        priorityItems.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.padding = '12px';
+            div.innerHTML = `<div style="font-weight:700">${c.name}</div>
+                             <div style="font-size:12px; color:var(--muted)">
+                                ${c.status.isCritical ? '<span style="color:var(--danger)">STATUS CRÍTICO (Reprovado em Semestre)</span>' : `Falta ${c.status.falta.toFixed(1)} pts`}
+                             </div>`;
+            list.appendChild(div);
+        });
+    }
+  }
+
+  function renderChart(){
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+
+    const active = data
+        .filter(d => !d.isLoading)
+        .map(item => ({...item, status: calculateSubjectStatus(item)}))
+        .filter(d => d.status.falta > 0)
+        .sort((a,b) => b.status.falta - a.status.falta)
+        .slice(0, 10);
+
+    if(chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: active.map(d => d.name.substring(0,8)),
+            datasets: [{
+                label: 'Falta',
+                data: active.map(d => d.status.falta),
+                backgroundColor: active.map(d => d.status.isCritical ? '#ef4444' : '#38bdf8'),
+                borderRadius:4
+            }]
+        },
+        options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins: { legend:{display:false} },
+            scales: {
+                y: { beginAtZero:true, grid:{color:'rgba(255,255,255,0.1)'} },
+                x: { ticks:{color:'#999', font:{size:10}}, grid:{display:false} }
+            }
+        }
+    });
+    renderPriority();
+  }
+
+  // --- MODAL E INPUTS DINÂMICOS ---
+
+  function renderNoteInputs(bimester, notesArray = []) {
+    const container = document.getElementById(`notes-container-${bimester}`);
+    container.innerHTML = '';
+    notesArray.forEach((noteValue, index) => {
+      createNoteInput(container, noteValue, index);
+    });
+  }
+
+  function createNoteInput(container, value = null) {
+      const noteRow = document.createElement('div');
+      noteRow.className = 'note-input-row';
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.1';
+      input.inputMode = 'decimal';
+      input.placeholder = `0.0`;
+      input.disabled = true; // Read Only
+      if (value !== null) input.value = value;
+
+      noteRow.appendChild(input);
+      container.appendChild(noteRow);
+  }
+
+  function openModal(id = null){
+    const modal = document.getElementById('modal');
+    modal.style.display = 'flex';
+    editingId = id;
+
+    if(id){
+        const item = data.find(d => d.id === id);
+        if(!item || item.isLoading) return; // Prevent opening loading items
+
+        document.getElementById('m-title').textContent = 'Detalhes';
+        document.getElementById('inpName').value = item.name;
+        document.getElementById('inpR1').value = item.r1Note || '';
+        document.getElementById('inpR2').value = item.r2Note || '';
+        document.getElementById('inpObs').value = item.obs || '';
+
+        renderNoteInputs('B1', item.b1Notes);
+        renderNoteInputs('B2', item.b2Notes);
+        renderNoteInputs('B3', item.b3Notes);
+        renderNoteInputs('B4', item.b4Notes);
+    }
+  }
+
+  function closeModal(){ document.getElementById('modal').style.display='none'; }
+
+  document.getElementById('modal').addEventListener('click', (e) => {
+    if(e.target.id === 'modal') closeModal();
+  });
+
+  // Start Streaming on Load
+  startDataStream();
+</script>
+</body>
+</html>
