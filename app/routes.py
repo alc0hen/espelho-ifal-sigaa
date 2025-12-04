@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from .sigaa_api.sigaa import Sigaa, InstitutionType
 import asyncio
 import json
+import os
 
 bp = Blueprint('main', __name__)
 
@@ -123,7 +124,26 @@ def stream_grades():
             account = Account(sigaa.session, response)
 
             name = await account.get_name()
-            yield json.dumps({"type": "user_info", "name": name}) + "\n"
+
+            # Check for Supporter Status
+            is_supporter = False
+            registration = None
+            if account.active_bonds:
+                registration = account.active_bonds[0].registration
+
+            try:
+                with open('app/apoio/apoiadores.json', 'r') as f:
+                    supporters = json.load(f)
+                    if registration and registration in supporters:
+                        is_supporter = True
+            except Exception:
+                pass # Default to False if file missing or error
+
+            yield json.dumps({
+                "type": "user_info",
+                "name": name,
+                "is_supporter": is_supporter
+            }) + "\n"
 
             if account.active_bonds:
                 for bond in account.active_bonds:
@@ -154,6 +174,35 @@ def stream_grades():
                                 "id": course_id,
                                 "data": grades_data
                             }) + "\n"
+
+                            # Fetch Frequency (Only for Supporters)
+                            if is_supporter:
+                                freq_data = None
+                                try:
+                                    freq_data = await course.get_frequency()
+                                except Exception as e:
+                                    print(f"Error fetching frequency for {course.title}: {e}")
+
+                                if freq_data:
+                                    yield json.dumps({
+                                        "type": "course_frequency",
+                                        "id": course_id,
+                                        "data": freq_data
+                                    }) + "\n"
+
+                            # Fetch Frequency
+                            freq_data = None
+                            try:
+                                freq_data = await course.get_frequency()
+                            except Exception as e:
+                                print(f"Error fetching frequency for {course.title}: {e}")
+
+                            if freq_data:
+                                yield json.dumps({
+                                    "type": "course_frequency",
+                                    "id": course_id,
+                                    "data": freq_data
+                                }) + "\n"
 
         except Exception as e:
             print(f"Stream error: {e}")
