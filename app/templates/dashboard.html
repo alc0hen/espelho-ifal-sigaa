@@ -332,6 +332,17 @@
     showSupportCard();
   }, 5000);
 
+  // --- UTILS ---
+  function escapeHtml(text) {
+    if (text == null) return '';
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // --- LÓGICA DE CÁLCULO ---
 
   function calculateBimesterAverage(notesArray) {
@@ -535,9 +546,9 @@
           div.className += ' skeleton';
           div.innerHTML = `
             <div class="row-top">
-              <div class="subj-name">${item.name} <span style="font-weight:400; font-size:12px; color:var(--muted)">...</span></div>
+              <div class="subj-name">${escapeHtml(item.name)} <span style="font-weight:400; font-size:12px; color:var(--muted)">...</span></div>
             </div>
-            <div class="subj-obs">${item.obs}</div>
+            <div class="subj-obs">${escapeHtml(item.obs)}</div>
           `;
           if (supportCard) {
               container.insertBefore(div, supportCard);
@@ -559,7 +570,7 @@
         <div class="card-indicator" style="background:${sideColor}"></div>
         <div class="row-top">
           <div>
-            <div class="subj-name">${item.name}</div>
+            <div class="subj-name">${escapeHtml(item.name)}</div>
             <div class="badges-row">
               <span class="badge ${getStatusColor(st.s1_status)}">S1: ${st.s1_status === 'Concluído' ? 'OK' : st.s1_total + '/12'}</span>
               <span class="badge ${getStatusColor(st.s2_status)}">S2: ${st.s2_status === 'Concluído' ? 'OK' : st.s2_total + '/12'}</span>
@@ -570,7 +581,7 @@
              <span class="score-label">${scoreLabel}</span>
           </div>
         </div>
-        ${item.obs ? `<span class="subj-obs">${item.obs}</span>` : ''}
+        ${item.obs ? `<span class="subj-obs">${escapeHtml(item.obs)}</span>` : ''}
       `;
 
       if (supportCard) {
@@ -693,7 +704,7 @@
 
           div.innerHTML = `
               <div class="row-top">
-                  <div class="subj-name">${item.name}</div>
+                  <div class="subj-name">${escapeHtml(item.name)}</div>
               </div>
               ${freqContent}
           `;
@@ -719,7 +730,7 @@
             const div = document.createElement('div');
             div.className = 'card';
             div.style.padding = '12px';
-            div.innerHTML = `<div style="font-weight:700">${c.name}</div>
+            div.innerHTML = `<div style="font-weight:700">${escapeHtml(c.name)}</div>
                              <div style="font-size:12px; color:var(--muted)">
                                 ${c.status.isCritical ? '<span style="color:var(--danger)">STATUS CRÍTICO (Reprovado em Semestre)</span>' : `Falta ${c.status.falta.toFixed(1)} pts`}
                              </div>`;

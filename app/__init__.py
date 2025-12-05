@@ -7,18 +7,21 @@ def create_app():
     app = Flask(__name__)
 
     # Security Configuration
-    app.secret_key = os.environ.get('SECRET_KEY', '8f8914969a6246448a7eed278112ed862b73e5ac11f09943e2b20e6b470fa7f1')
+    is_prod = os.environ.get('Render') or os.environ.get('FLASK_ENV') == 'production'
+
+    if is_prod:
+        if not os.environ.get('SECRET_KEY'):
+            raise ValueError("SECRET_KEY environment variable is required in production!")
+        app.secret_key = os.environ.get('SECRET_KEY')
+        app.config['SESSION_COOKIE_SECURE'] = True
+    else:
+        # Fallback for dev only
+        app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key_change_me_in_prod')
+        app.config['SESSION_COOKIE_SECURE'] = False
 
     # Cookie Security
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
-    # Enable Secure flag only if explicitly set or if likely in production (e.g., Render sets PORT)
-    # Default to False for local dev to avoid breaking it
-    if os.environ.get('Render') or os.environ.get('FLASK_ENV') == 'production':
-        app.config['SESSION_COOKIE_SECURE'] = True
-    else:
-        app.config['SESSION_COOKIE_SECURE'] = False
 
     # CSRF Protection
     csrf = CSRFProtect(app)
