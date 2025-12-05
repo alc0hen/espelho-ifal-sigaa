@@ -4,8 +4,10 @@ import asyncio
 import json
 import os
 import aiohttp
+import logging
 
 bp = Blueprint('main', __name__)
+logger = logging.getLogger(__name__)
 
 SIGAA_URL = "https://sigaa.ifal.edu.br"
 SUPPORTERS_URL = "https://raw.githubusercontent.com/AlbertCohenhgs/public_lists/refs/heads/main/apoiadores.json"
@@ -32,7 +34,9 @@ async def login():
             session['sigaa_cookies'] = cookies
             return redirect(url_for('main.dashboard'))
         except Exception as e:
-            return render_template('login.html', error=str(e))
+            logger.error(f"Login failed: {type(e).__name__}")
+            # Ensure we don't leak full HTML or sensitive stack traces to user
+            return render_template('login.html', error="Falha no login. Verifique suas credenciais.")
         finally:
             await sigaa.close()
 
@@ -141,7 +145,7 @@ def stream_grades():
                         if resp.status == 200:
                             supporters = await resp.json(content_type=None)
             except Exception as e:
-                print(f"Error fetching online supporters list: {e}")
+                logger.warning(f"Error fetching online supporters list: {e}")
                 # Fallback to local file
                 try:
                     with open('app/apoio/apoiadores.json', 'r') as f:
@@ -182,7 +186,7 @@ def stream_grades():
                                 if raw_grades:
                                     grades_data = process_grades(raw_grades)
                             except Exception as e:
-                                print(f"Error fetching grades for {course.title}: {e}")
+                                logger.error(f"Error fetching grades for {course.title}: {type(e).__name__}")
 
                             yield json.dumps({
                                 "type": "course_data",
@@ -196,7 +200,7 @@ def stream_grades():
                                 try:
                                     freq_data = await course.get_frequency()
                                 except Exception as e:
-                                    print(f"Error fetching frequency for {course.title}: {e}")
+                                    logger.error(f"Error fetching frequency for {course.title}: {type(e).__name__}")
 
                                 if freq_data:
                                     yield json.dumps({
@@ -210,7 +214,7 @@ def stream_grades():
                             try:
                                 freq_data = await course.get_frequency()
                             except Exception as e:
-                                print(f"Error fetching frequency for {course.title}: {e}")
+                                logger.error(f"Error fetching frequency for {course.title}: {type(e).__name__}")
 
                             if freq_data:
                                 yield json.dumps({
@@ -220,8 +224,8 @@ def stream_grades():
                                 }) + "\n"
 
         except Exception as e:
-            print(f"Stream error: {e}")
-            yield json.dumps({"error": str(e)}) + "\n"
+            logger.error(f"Stream error: {e}")
+            yield json.dumps({"error": "Erro no carregamento dos dados."}) + "\n"
         finally:
             await sigaa.close()
 
@@ -238,7 +242,7 @@ def stream_grades():
         except StopAsyncIteration:
             pass
         except Exception as e:
-            print(f"Sync wrapper error: {e}")
+            logger.error(f"Sync wrapper error: {e}")
             yield json.dumps({"error": "Internal Server Error"}) + "\n"
         finally:
             loop.close()
