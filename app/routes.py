@@ -3,10 +3,12 @@ from .sigaa_api.sigaa import Sigaa, InstitutionType
 import asyncio
 import json
 import os
+import aiohttp
 
 bp = Blueprint('main', __name__)
 
 SIGAA_URL = "https://sigaa.ifal.edu.br"
+SUPPORTERS_URL = "https://raw.githubusercontent.com/AlbertCohenhgs/public_lists/refs/heads/main/apoiadores.json"
 
 @bp.route('/')
 def index():
@@ -131,13 +133,26 @@ def stream_grades():
             if account.active_bonds:
                 registration = account.active_bonds[0].registration
 
+            supporters = []
             try:
-                with open('app/apoio/apoiadores.json', 'r') as f:
-                    supporters = json.load(f)
-                    if registration and registration in supporters:
-                        is_supporter = True
-            except Exception:
-                pass # Default to False if file missing or error
+                # Try to fetch from online list
+                async with aiohttp.ClientSession() as session_http:
+                    async with session_http.get(SUPPORTERS_URL) as resp:
+                        if resp.status == 200:
+                            supporters = await resp.json(content_type=None)
+            except Exception as e:
+                print(f"Error fetching online supporters list: {e}")
+                # Fallback to local file
+                try:
+                    with open('app/apoio/apoiadores.json', 'r') as f:
+                        supporters = json.load(f)
+                except Exception:
+                    pass
+
+            # Optimize lookup
+            supporters_set = {str(s) for s in supporters}
+            if registration and str(registration) in supporters_set:
+                 is_supporter = True
 
             yield json.dumps({
                 "type": "user_info",
