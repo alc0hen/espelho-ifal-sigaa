@@ -345,11 +345,16 @@
 
   // --- LÓGICA DE CÁLCULO ---
 
+  function roundToSigaa(val) {
+      return Math.round(val * 2) / 2;
+  }
+
   function calculateBimesterAverage(notesArray) {
     const validNotes = notesArray.filter(n => !isNaN(n) && n !== null);
     if (validNotes.length === 0) return { total: 0, count: 0, average: 0, hasNotes: false };
     const sum = validNotes.reduce((a, b) => a + b, 0);
-    return { total: sum, count: validNotes.length, average: sum / validNotes.length, hasNotes: true };
+    const rawAvg = sum / validNotes.length;
+    return { total: sum, count: validNotes.length, average: roundToSigaa(rawAvg), hasNotes: true };
   }
 
   function applyRecovery(b1_avg, b2_avg, rNote) {
@@ -683,11 +688,18 @@
               const statusColor = isFailed ? 'var(--danger)' : 'var(--success)';
               const statusText = isFailed ? 'Limite indicado ultrapassado' : 'Dentro do Limite';
 
+              // Calculate Final Grade (Average)
+              const st = calculateSubjectStatus(item);
+              const finalAvg = (st.total_score / 4).toFixed(1);
+
               freqContent = `
                   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
                       <div>
                           <div style="font-size:12px; color:var(--muted)">Faltas / Limite</div>
                           <div style="font-size:16px; font-weight:600; color:#fff">${total_faltas} / ${max_faltas}</div>
+
+                          <div style="font-size:12px; color:var(--muted); margin-top:8px;">Nota Final Atual</div>
+                          <div style="font-size:16px; font-weight:600; color:${st.final_ok ? 'var(--success)' : '#fff'}">${finalAvg}</div>
                       </div>
                       <div style="text-align:right">
                           <div style="font-size:12px; color:var(--muted)">Ausência</div>
