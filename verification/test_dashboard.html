@@ -233,7 +233,7 @@
               <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
             </svg>
         </button>
-        <a href="{{ url_for('main.logout') }}" style="color:var(--muted); text-decoration:none; font-size:12px; font-weight:600;">Sair</a>
+        <a href="#" style="color:var(--muted); text-decoration:none; font-size:12px; font-weight:600;">Sair</a>
         <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8);"></div>
     </div>
   </header>
@@ -423,7 +423,7 @@
     const container = document.getElementById('cards-container');
     const supportDiv = document.createElement('div');
     supportDiv.className = 'card support-card';
-    supportDiv.onclick = () => window.location.href = "{{ url_for('main.support') }}";
+    supportDiv.onclick = () => window.location.href = "#";
 
     supportDiv.innerHTML = `
       <div class="card-indicator" style="background:rgba(255,255,255,0.3)"></div>
@@ -552,7 +552,7 @@
 
     isStreamActive = true;
     try {
-        const response = await fetch('/api/stream_grades');
+        const response = await fetch('http://mock-backend/api/stream_grades');
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -783,6 +783,7 @@
 
   // --- WRAPPED GENERATOR ---
   function generateWrapped() {
+      console.log('generateWrapped called. isSupporter:', isSupporter);
       const modal = document.getElementById('wrapped-modal');
       const validData = data.filter(d => !d.isLoading);
 
@@ -947,7 +948,7 @@
       if (!isSupporter) {
           const lockedCard = document.createElement('div');
           lockedCard.className = 'card support-card';
-          lockedCard.onclick = () => window.location.href = "{{ url_for('main.support') }}";
+          lockedCard.onclick = () => window.location.href = "#";
           lockedCard.style.padding = '32px 20px';
           lockedCard.style.textAlign = 'center';
           lockedCard.innerHTML = `
