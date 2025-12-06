@@ -405,12 +405,23 @@
       else s2_status = 'Parcial';
     }
 
-    const final_ok = (s1_status === 'Concluído' && s2_status === 'Concluído') || (total_score >= ANNUAL_PASS_SCORE);
+    // Logic update: Final grade average is rounded, and if >= 6.0, the student passes.
+    // total_score is the sum of rounded bimesters.
+    // Average = total_score / 4.
+    // Rounded Average = roundSigga(Average).
+    const finalAvg = total_score / 4;
+    const roundedFinalAvg = roundSigga(finalAvg);
+
+    // Pass if score >= 24 (legacy/sum check) OR if rounded average >= 6.0
+    // Actually, user says "caso marquem 6 o user deve ser considerado aprovado".
+    // 6.0 * 4 = 24.0. So checking roundedFinalAvg >= 6.0 covers the 24 sum requirement effectively if using rounded averages.
+
+    const final_ok = (s1_status === 'Concluído' && s2_status === 'Concluído') || (roundedFinalAvg >= 6.0);
 
     const isCritical = !final_ok && (s1_status === 'Reprovado' || s2_status === 'Reprovado');
 
     return {
-      s1_status, s2_status, s1_total, s2_total, total_score, isCritical, final_ok,
+      s1_status, s2_status, s1_total, s2_total, total_score, isCritical, final_ok, roundedFinalAvg,
       falta: final_ok ? 0 : Math.max(0, ANNUAL_PASS_SCORE - total_score)
     };
   }
@@ -570,13 +581,6 @@
       const scoreLabel = st.final_ok ? 'OK' : 'Falta';
       const scoreDisplay = st.final_ok ? '✓' : st.falta.toFixed(1);
 
-      // Calculate Final Grade for display
-      const b1 = calculateBimesterAverage(item.b1Notes).average;
-      const b2 = calculateBimesterAverage(item.b2Notes).average;
-      const b3 = calculateBimesterAverage(item.b3Notes).average;
-      const b4 = calculateBimesterAverage(item.b4Notes).average;
-      const finalGrade = (b1 + b2 + b3 + b4) / 4;
-
       div.onclick = () => openModal(item.id);
 
       div.innerHTML = `
@@ -592,7 +596,7 @@
           <div class="score-box">
              <div class="score-val" style="color:${scoreColor}">${scoreDisplay}</div>
              <span class="score-label">${scoreLabel}</span>
-             <span class="score-label" style="color:#fff; margin-top:4px;">Nota: ${finalGrade.toFixed(1)}</span>
+             <span class="score-label" style="color:#fff; margin-top:4px;">Média: ${st.roundedFinalAvg.toFixed(1)}</span>
           </div>
         </div>
         ${item.obs ? `<span class="subj-obs">${escapeHtml(item.obs)}</span>` : ''}
