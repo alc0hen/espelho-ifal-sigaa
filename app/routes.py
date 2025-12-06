@@ -46,6 +46,10 @@ async def login():
 def support():
     return render_template('support.html')
 
+@bp.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
 def process_grades(raw_grades):
 
     data = {
