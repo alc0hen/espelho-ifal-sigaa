@@ -343,13 +343,19 @@
       .replace(/'/g, "&#039;");
   }
 
+  function roundSigga(val) {
+      // Arredonda para 0.0 ou 0.5 mais próximo
+      return Math.round(val * 2) / 2;
+  }
+
   // --- LÓGICA DE CÁLCULO ---
 
   function calculateBimesterAverage(notesArray) {
     const validNotes = notesArray.filter(n => !isNaN(n) && n !== null);
     if (validNotes.length === 0) return { total: 0, count: 0, average: 0, hasNotes: false };
     const sum = validNotes.reduce((a, b) => a + b, 0);
-    return { total: sum, count: validNotes.length, average: sum / validNotes.length, hasNotes: true };
+    const avg = sum / validNotes.length;
+    return { total: sum, count: validNotes.length, average: roundSigga(avg), hasNotes: true };
   }
 
   function applyRecovery(b1_avg, b2_avg, rNote) {
@@ -564,6 +570,13 @@
       const scoreLabel = st.final_ok ? 'OK' : 'Falta';
       const scoreDisplay = st.final_ok ? '✓' : st.falta.toFixed(1);
 
+      // Calculate Final Grade for display
+      const b1 = calculateBimesterAverage(item.b1Notes).average;
+      const b2 = calculateBimesterAverage(item.b2Notes).average;
+      const b3 = calculateBimesterAverage(item.b3Notes).average;
+      const b4 = calculateBimesterAverage(item.b4Notes).average;
+      const finalGrade = (b1 + b2 + b3 + b4) / 4;
+
       div.onclick = () => openModal(item.id);
 
       div.innerHTML = `
@@ -579,6 +592,7 @@
           <div class="score-box">
              <div class="score-val" style="color:${scoreColor}">${scoreDisplay}</div>
              <span class="score-label">${scoreLabel}</span>
+             <span class="score-label" style="color:#fff; margin-top:4px;">Nota: ${finalGrade.toFixed(1)}</span>
           </div>
         </div>
         ${item.obs ? `<span class="subj-obs">${escapeHtml(item.obs)}</span>` : ''}
