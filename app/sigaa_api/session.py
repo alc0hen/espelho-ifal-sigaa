@@ -21,7 +21,7 @@ class SigaaSession:
         if self._session is None:
             # unsafe=True is required to handle legacy cookies from SIGAA that might violate RFCs (e.g., IP domains or special chars)
             # This is a known acceptance of risk for compatibility.
-            cookie_jar = aiohttp.CookieJar(unsafe=False)
+            cookie_jar = aiohttp.CookieJar(unsafe=True)
             if self._initial_cookies:
                 # Assuming _initial_cookies is a dict or simple cookie list
                 # aiohttp.CookieJar updates from dict or SimpleCookie
