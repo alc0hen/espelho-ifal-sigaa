@@ -213,20 +213,6 @@ def stream_grades():
                                         "data": freq_data
                                     }) + "\n"
 
-                            # Fetch Frequency
-                            freq_data = None
-                            try:
-                                freq_data = await course.get_frequency()
-                            except Exception as e:
-                                logger.error(f"Error fetching frequency for {course.title}: {type(e).__name__}")
-
-                            if freq_data:
-                                yield json.dumps({
-                                    "type": "course_frequency",
-                                    "id": course_id,
-                                    "data": freq_data
-                                }) + "\n"
-
         except Exception as e:
             logger.error(f"Stream error: {e}")
             yield json.dumps({"error": "Erro no carregamento dos dados."}) + "\n"
