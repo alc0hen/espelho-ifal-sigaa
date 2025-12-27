@@ -544,15 +544,35 @@
 
   // --- STREAMING LOGIC ---
   async function startDataStream() {
-    // Load Last State
-    const stored = localStorage.getItem('last_grades');
-    if (stored) {
-        try { lastGradesState = JSON.parse(stored); } catch(e) {}
+    // Check if Demo Mode
+    const isDemo = window.location.pathname === '/demo';
+
+    if (isDemo) {
+        document.body.insertAdjacentHTML('afterbegin', `
+            <div style="background:var(--warning); color:#000; text-align:center; padding:8px; font-weight:700; font-size:12px; position:sticky; top:0; z-index:9999;">
+                MODO DEMONSTRAÇÃO - DADOS FICTÍCIOS
+            </div>
+        `);
+        // Disable Logout Link
+        const logoutLink = document.querySelector('header a[href*="logout"]');
+        if(logoutLink) {
+            logoutLink.href = "/login";
+            logoutLink.textContent = "Fazer Login";
+        }
+    }
+
+    // Load Last State (Skip in demo to always show fresh animation or use specific demo cache key)
+    if (!isDemo) {
+        const stored = localStorage.getItem('last_grades');
+        if (stored) {
+            try { lastGradesState = JSON.parse(stored); } catch(e) {}
+        }
     }
 
     isStreamActive = true;
     try {
-        const response = await fetch('/api/stream_grades');
+        const endpoint = isDemo ? '/api/stream_demo' : '/api/stream_grades';
+        const response = await fetch(endpoint);
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
