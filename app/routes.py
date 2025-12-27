@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, Response, stream_with_context
 from .sigaa_api.sigaa import Sigaa, InstitutionType
+from .demo_data import get_demo_data
 import asyncio
 import json
 import os
 import aiohttp
 import logging
+import time
 
 bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -111,6 +113,23 @@ async def dashboard():
         return redirect(url_for('main.login'))
 
     return render_template('dashboard.html')
+
+@bp.route('/demo')
+def demo():
+    return render_template('dashboard.html')
+
+@bp.route('/api/stream_demo')
+def stream_demo():
+    def generate():
+        # Simulate network delay for realism
+        time.sleep(0.5)
+
+        for data in get_demo_data():
+            # Small delay between chunks to simulate streaming
+            time.sleep(0.1)
+            yield json.dumps(data) + "\n"
+
+    return Response(stream_with_context(generate()), mimetype='application/x-ndjson')
 
 @bp.route('/api/stream_grades')
 def stream_grades():
