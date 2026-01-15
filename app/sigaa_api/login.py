@@ -90,6 +90,11 @@ class SigaaLoginImpl(SigaaLogin):
         if page.soup.find(id='btnNaoResponderContinuarSigaa'):
             page = await self._handle_questionnaire(page)
 
+            # If we are still on the questionnaire page (e.g. AJAX response or no redirect),
+            # force navigation to the student portal.
+            if '/sigaa/questionarios.jsf' in str(page.url):
+                page = await self.session.get('/sigaa/verPortalDiscente.do')
+
         # Check if we are logged in.
         # IFAL might differ slightly in text, but usually "Entrar no Sistema" indicates failure/redirect back to login.
         if 'Entrar no Sistema' in page.body or 'Usuário e/ou senha inválidos' in page.body:
