@@ -18,6 +18,40 @@ class SigaaLoginImpl(SigaaLogin):
         page = await self.session.get('/sigaa/verTelaLogin.do')
         return self._parse_login_form(page)
 
+    async def _handle_questionnaire(self, page):
+        # Check if questionnaire is present
+        skip_button = page.soup.find(id='btnNaoResponderContinuarSigaa')
+        if not skip_button:
+            return page
+
+        form = skip_button.find_parent('form')
+        if not form:
+            return page
+
+        action = form.get('action')
+        form_id = form.get('id')
+
+        if not action or not form_id:
+            return page
+
+        # Construct full action URL
+        action_url = urljoin(str(page.url), action)
+
+        # Get ViewState
+        view_state = page.view_state
+
+        post_values = {
+            form_id: form_id,
+            'btnNaoResponderContinuarSigaa': 'btnNaoResponderContinuarSigaa'
+        }
+        if view_state:
+            post_values['javax.faces.ViewState'] = view_state
+
+        # Submit
+        # We perform a standard POST to trigger the skip
+        new_page = await self.session.post(action_url, data=post_values)
+        return new_page
+
     def _parse_login_form(self, page):
         form = page.soup.find('form', attrs={'name': 'loginForm'})
         if not form:
@@ -51,6 +85,10 @@ class SigaaLoginImpl(SigaaLogin):
 
         # Submit login
         page = await self.session.post(action_url, data=post_values)
+
+        # Check for questionnaire
+        if page.soup.find(id='btnNaoResponderContinuarSigaa'):
+            page = await self._handle_questionnaire(page)
 
         # Check if we are logged in.
         # IFAL might differ slightly in text, but usually "Entrar no Sistema" indicates failure/redirect back to login.
